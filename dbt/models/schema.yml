@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_employees
+    columns:
+      - name: employee_id
+        tests:
+          - not_null
+  - name: int_employees_clean
+    columns:
+      - name: employee_id
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - not_null
+      - name: salary
+        tests:
+          - not_null
+  - name: dim_employees
+    columns:
+      - name: employee_id
+        tests:
+          - unique
+          - not_null

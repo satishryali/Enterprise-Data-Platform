@@ -49,6 +49,7 @@ Thumbs.db
 data/raw/*
 data/input/*
 !data/input/.gitkeep
+!data/input/employees.csv
 data/output/*
 !data/output/.gitkeep
 data/sample/*
@@ -71,6 +72,7 @@ dbt/logs/
 dbt/target/
 dbt/packages/
 dbt/dbt_packages/
+dbt/.user.yml
 
 # Docker
 .docker/

@@ -1,0 +1,30 @@
+edp:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('EDP_PG_USER') }}"
+      password: "{{ env_var('EDP_PG_PASSWORD') }}"
+      dbname: etl_dev
+      schema: public
+      threads: 2
+    stg:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('EDP_PG_USER') }}"
+      password: "{{ env_var('EDP_PG_PASSWORD') }}"
+      dbname: etl_stg
+      schema: public
+      threads: 2
+    prod:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('EDP_PG_USER') }}"
+      password: "{{ env_var('EDP_PG_PASSWORD') }}"
+      dbname: etl_prod
+      schema: public
+      threads: 2

@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: employees
+        description: CSV landings loaded by Airflow
+        columns:
+          - name: employee_id
+          - name: first_name
+          - name: last_name
+          - name: email
+          - name: phone
+          - name: department
+          - name: salary
+          - name: joining_date
+          - name: _loaded_at
+          - name: _source_file

@@ -1,18 +1,20 @@
 import pandas as pd
 from pathlib import Path
-import configparser
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-import sys
-sys.insert(0,BASE_DIR /"logs"/'logger.py')
 
-config_path = BASE_DIR / "config"
-log.info("Config_path : %s" % config_path)
-file_path = BASE_DIR / "data" / "input"
-log.info("File_path : %s" % file_path)
-config = configparser.ConfigParser()
-config.read(filenames=config_path/"config.ini")
-log.info(f"using pandas to read the csv file")
-data = pd.read_csv(file_path/"employees.csv")
-log.info(data)
+from logs.logger import log
+
+
+def read_csv(file_path):
+    """Read a CSV file and return it as a pandas DataFrame."""
+    log.info("Reading CSV file: %s", file_path)
+    data = pd.read_csv(file_path)
+    log.info("Read %d rows", len(data))
+    return data
+
+
+if __name__ == "__main__":
+    file_path = BASE_DIR / "data" / "input" / "employees.csv"
+    data = read_csv(file_path)
+    print(data)
