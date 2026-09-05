@@ -1,9 +1,5 @@
 import logging
 
-logging.basicConfig(filename = "applog.log", format = "%(asctime)s | %(level)s | %(message)s")
+logging.basicConfig(filename = "applog.log", format = "%(asctime)s | %(level)s | %(message)s", level = logging.DEBUG)
 
-log = logging.getLogger()
-
-log.setLevel(logging.DEBUG)
-
-
+logging.info("Satish ryali is a coder and he codes very well")

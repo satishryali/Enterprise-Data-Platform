@@ -6,7 +6,6 @@ import configparser
 BASE_DIR = Path(__file__).resolve().parent.parent
 import sys
 sys.insert(0,BASE_DIR /"logs"/'logger.py')
-import logger
 
 config_path = BASE_DIR / "config"
 log.info("Config_path : %s" % config_path)
