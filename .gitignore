@@ -1,0 +1,98 @@
+# Environment variables
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Data files (raw and downloaded)
+data/raw/*
+data/input/*
+!data/input/.gitkeep
+data/output/*
+!data/output/.gitkeep
+data/sample/*
+!data/sample/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Airflow
+airflow/logs/
+airflow/airflow.db
+airflow/webserver_config.py
+airflow/plugins/
+airflow/config/*
+!airflow/config/.gitkeep
+
+# dbt
+dbt/logs/
+dbt/target/
+dbt/packages/
+dbt/dbt_packages/
+
+# Docker
+.docker/
+
+# Vault
+vault/
+
+# Jenkins
+jenkins/workspace/
+
+# Config with secrets
+config/*.ini
+config/*.yaml
+config/*.yml
+config/*.env
+!config/.gitkeep
+
+# Compiled files
+*.jar
+*.war
+*.class
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
