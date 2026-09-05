@@ -8,5 +8,11 @@ pipeline {
                 sh 'git status'
             }
         }
+
+        stage('Application Test') {
+            steps {
+                sh 'python3 src/main.py'
+            }
+        }
     }
 }
