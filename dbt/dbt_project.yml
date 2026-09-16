@@ -13,6 +13,9 @@ snapshot-paths: ["snapshots"]
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
+vars:
+  edp_env: "{{ target.name }}"
+
 models:
   edp:
     staging:

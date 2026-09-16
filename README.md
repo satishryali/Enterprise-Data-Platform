@@ -18,11 +18,11 @@ There is no shared database, no `promote_raw` copy, and no shared Docker network
 ```bash
 scripts/lab.sh up          # DEV: Postgres + Airflow + Oracle
 scripts/lab.sh status
-scripts/lab.sh dbt-dev
+scripts/lab.sh dbt-dev     # dbt debug + build on DEV etl
 scripts/lab.sh down
 
-scripts/lab.sh prod-up     # optional, or let Jenkins start it
-scripts/lab.sh dbt-prod
+scripts/lab.sh prod-up     # PROD Postgres (required before dbt-prod)
+scripts/lab.sh dbt-prod    # dbt debug + build on PROD etl
 scripts/lab.sh prod-down   # PROD uses no RAM when down
 ```
 

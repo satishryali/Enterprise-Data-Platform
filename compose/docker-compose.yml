@@ -157,7 +157,10 @@ services:
     environment:
       EDP_PG_USER: ${EDP_PG_USER}
       EDP_PG_PASSWORD: ${EDP_PG_PASSWORD}
+      EDP_ENV: ${EDP_ENV}
       DBT_HOST: postgres
+      DBT_PORT: "5432"
+      DBT_DBNAME: etl
     depends_on:
       postgres:
         condition: service_healthy

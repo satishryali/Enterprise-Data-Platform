@@ -4,18 +4,20 @@ edp:
     dev:
       type: postgres
       host: "{{ env_var('DBT_HOST', 'postgres') }}"
-      port: 5432
+      port: "{{ env_var('DBT_PORT', '5432') | as_number }}"
       user: "{{ env_var('EDP_PG_USER') }}"
       password: "{{ env_var('EDP_PG_PASSWORD') }}"
-      dbname: etl
+      dbname: "{{ env_var('DBT_DBNAME', 'etl') }}"
       schema: public
       threads: 2
+      connect_timeout: 10
     prod:
       type: postgres
       host: "{{ env_var('DBT_HOST', 'postgres') }}"
-      port: 5432
+      port: "{{ env_var('DBT_PORT', '5432') | as_number }}"
       user: "{{ env_var('EDP_PG_USER') }}"
       password: "{{ env_var('EDP_PG_PASSWORD') }}"
-      dbname: etl
+      dbname: "{{ env_var('DBT_DBNAME', 'etl') }}"
       schema: public
       threads: 2
+      connect_timeout: 10

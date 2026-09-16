@@ -36,6 +36,9 @@ pipeline {
                 sh '''
                     chmod +x scripts/*.sh
                     scripts/load_raw.sh dev "$WORKSPACE/data/input/employees.csv"
+                    if [ -f "$WORKSPACE/data/input/orders.csv" ]; then
+                      scripts/load_orders.sh dev "$WORKSPACE/data/input/orders.csv"
+                    fi
                     scripts/ci_dbt.sh dev "$WORKSPACE"
                 '''
             }
@@ -65,6 +68,9 @@ pipeline {
                       sleep 2
                     done
                     scripts/load_raw.sh prod "$PROD_ROOT/data/input/employees.csv"
+                    if [ -f "$PROD_ROOT/data/input/orders.csv" ]; then
+                      scripts/load_orders.sh prod "$PROD_ROOT/data/input/orders.csv"
+                    fi
                     scripts/ci_dbt.sh prod "$PROD_ROOT"
                 '''
             }

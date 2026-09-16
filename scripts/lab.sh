@@ -41,9 +41,14 @@ case "$cmd" in
     echo '=== RAM ==='
     docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'
     ;;
-  dbt-dev) dev_compose --profile tools run --rm --no-deps dbt build --target dev ;;
+  dbt-dev)
+    CODE_ROOT="$ROOT" "$ROOT/scripts/ci_dbt.sh" dev "$ROOT"
+    ;;
   prod-up) prod_compose up -d postgres ;;
   prod-down) prod_compose --profile airflow --profile tools down ;;
-  dbt-prod) prod_compose --profile tools run --rm --no-deps dbt build --target prod ;;
+  dbt-prod)
+    prod_compose up -d postgres
+    CODE_ROOT="$ROOT" "$ROOT/scripts/ci_dbt.sh" prod "$ROOT"
+    ;;
   *) usage; exit 1 ;;
 esac
