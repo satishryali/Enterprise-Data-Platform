@@ -5,13 +5,13 @@ pipeline {
         booleanParam(
             name: 'DEPLOY_PROD',
             defaultValue: false,
-            description: 'Also promote STG -> PROD after DEV and STG succeed'
+            description: 'Deploy this Git commit into the isolated PROD stack (starts PROD Postgres, then dbt)'
         )
     }
 
     environment {
         LAB_DIR = '/home/satish/Enterprise-Data-Platform'
-        ENV_FILE = '/home/satish/Enterprise-Data-Platform/.env'
+        PROD_ROOT = '/mnt/storage/import/edp-prod/release'
     }
 
     stages {
@@ -41,24 +41,31 @@ pipeline {
             }
         }
 
-        stage('Promote DEV -> STG') {
-            steps {
-                sh '''
-                    scripts/promote_raw.sh etl_dev etl_stg
-                    scripts/ci_dbt.sh stg "$WORKSPACE"
-                '''
-            }
-        }
-
-        stage('Promote STG -> PROD') {
+        stage('Deploy PROD from Git') {
             when {
                 expression { params.DEPLOY_PROD == true || params.DEPLOY_PROD == 'true' }
             }
             steps {
-                input message: 'Promote STG to PROD?'
+                input message: 'Deploy this commit to isolated PROD? This does not copy data from DEV.'
                 sh '''
-                    scripts/promote_raw.sh etl_stg etl_prod
-                    scripts/ci_dbt.sh prod "$WORKSPACE"
+                    mkdir -p "$PROD_ROOT"
+                    rsync -a --delete \
+                      --exclude '.git/' \
+                      --exclude '.venv/' \
+                      --exclude 'dbt/target/' \
+                      --exclude 'dbt/logs/' \
+                      --exclude 'airflow/logs/' \
+                      "$WORKSPACE/" "$PROD_ROOT/"
+                    docker compose -p edp-prod \
+                      --env-file "$LAB_DIR/environments/prod/.env" \
+                      -f "$LAB_DIR/compose/docker-compose.yml" \
+                      up -d postgres
+                    for i in $(seq 1 30); do
+                      docker exec edp-prod-postgres pg_isready -U postgres && break
+                      sleep 2
+                    done
+                    scripts/load_raw.sh prod "$PROD_ROOT/data/input/employees.csv"
+                    scripts/ci_dbt.sh prod "$PROD_ROOT"
                 '''
             }
         }

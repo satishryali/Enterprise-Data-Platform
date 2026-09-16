@@ -1,37 +1,31 @@
-# Enterprise-Data-Platform
+# Isolated DEV / PROD on one host. PROD is off until Jenkins deploys a Git commit.
 
-Home-lab data engineering platform: one host, three logical environments (DEV / STG / PROD).
+## Isolation
 
-## Architecture
+| | DEV | PROD |
+|---|---|---|
+| Compose project | `edp-dev` | `edp-prod` |
+| Docker network | `edp-dev_default` | `edp-prod_default` |
+| Postgres | `edp-dev-postgres` :5432 | `edp-prod-postgres` :5433 (stopped by default) |
+| Airflow | :8081 | not started |
+| Oracle | `edp-dev-oracle` :1521 | none |
+| Code | this git working tree | `/mnt/storage/import/edp-prod/release` (Jenkins rsync) |
 
-```
-GitHub main  -->  Jenkins
-                    |-- load CSV into etl_dev.raw  +  dbt --target dev
-                    |-- copy raw DEV -> STG        +  dbt --target stg
-                    `-- (optional) copy STG -> PROD +  dbt --target prod
-```
+There is no shared database, no `promote_raw` copy, and no shared Docker network. Objects reach PROD only from Git via Jenkins.
 
-Always-on: Postgres, Airflow, Vault, Jenkins, Prometheus/Grafana.
-On-demand: Jupyter (`scripts/lab.sh jupyter`).
-
-## Jenkins (DEV -> STG -> PROD)
-
-Job: `Enterprise-Data-Platform` at http://192.168.1.195:8082
-
-- Every build on `main` deploys **DEV**, then promotes **STG**.
-- Check **DEPLOY_PROD** and approve the prompt to promote **PROD**.
-
-Airflow UI (optional manual ingest): http://192.168.1.195:8081
-
-## Local commands
+## Commands
 
 ```bash
-scripts/lab.sh up
+scripts/lab.sh up          # DEV: Postgres + Airflow + Oracle
+scripts/lab.sh status
 scripts/lab.sh dbt-dev
-scripts/lab.sh jupyter
 scripts/lab.sh down
+
+scripts/lab.sh prod-up     # optional, or let Jenkins start it
+scripts/lab.sh dbt-prod
+scripts/lab.sh prod-down   # PROD uses no RAM when down
 ```
 
-## Resource notes
+Jenkins: **Build Now** = DEV only. Tick **DEPLOY_PROD** to rsync the commit and run dbt on PROD Postgres.
 
-This i3-2100 / 12 GB host cannot run three Airflow clusters. Isolation is by database and dbt target, not by duplicating the stack.
+Oracle (DEV only): `192.168.1.195:1521` service `FREEPDB1`, user `sys` as SYSDBA. Stop Airflow if Oracle is killed (exit 137) — this host has 12 GB RAM.

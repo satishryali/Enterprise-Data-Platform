@@ -4,15 +4,12 @@ set -euo pipefail
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     CREATE USER ${EDP_PG_USER} WITH PASSWORD '${EDP_PG_PASSWORD}';
     CREATE DATABASE airflow OWNER ${POSTGRES_USER};
-    CREATE DATABASE etl_dev OWNER ${EDP_PG_USER};
-    CREATE DATABASE etl_stg OWNER ${EDP_PG_USER};
-    CREATE DATABASE etl_prod OWNER ${EDP_PG_USER};
+    CREATE DATABASE etl OWNER ${EDP_PG_USER};
     GRANT ALL PRIVILEGES ON DATABASE airflow TO ${POSTGRES_USER};
-    GRANT ALL PRIVILEGES ON DATABASE etl_dev, etl_stg, etl_prod TO ${EDP_PG_USER};
+    GRANT ALL PRIVILEGES ON DATABASE etl TO ${EDP_PG_USER};
 EOSQL
 
-for db in etl_dev etl_stg etl_prod; do
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$db" <<-EOSQL
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname etl <<-EOSQL
     CREATE SCHEMA IF NOT EXISTS raw AUTHORIZATION ${EDP_PG_USER};
     CREATE SCHEMA IF NOT EXISTS staging AUTHORIZATION ${EDP_PG_USER};
     CREATE SCHEMA IF NOT EXISTS intermediate AUTHORIZATION ${EDP_PG_USER};
@@ -21,4 +18,3 @@ for db in etl_dev etl_stg etl_prod; do
     ALTER DEFAULT PRIVILEGES IN SCHEMA raw, staging, intermediate, mart, public
       GRANT ALL ON TABLES TO ${EDP_PG_USER};
 EOSQL
-done

@@ -1,0 +1,168 @@
+# Isolated stack template. Used twice:
+#   docker compose -p edp-dev  --env-file environments/dev/.env  -f compose/docker-compose.yml --profile airflow up -d
+#   docker compose -p edp-prod --env-file environments/prod/.env -f compose/docker-compose.yml up -d postgres
+# DEV and PROD do not share a network, volume, or database.
+
+x-airflow-common: &airflow-common
+  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.3.1}
+  env_file:
+    - ${ENV_FILE}
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
+    AIRFLOW__API_AUTH__JWT_ISSUER: airflow
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "false"
+    AIRFLOW_CONFIG: /opt/airflow/config/airflow.cfg
+    AIRFLOW_CONN_WAREHOUSE: postgresql://${EDP_PG_USER}:${EDP_PG_PASSWORD}@postgres:5432/etl
+    EDP_ENV: ${EDP_ENV}
+    EDP_PG_USER: ${EDP_PG_USER}
+    EDP_PG_PASSWORD: ${EDP_PG_PASSWORD}
+  volumes:
+    - ${CODE_ROOT}/airflow/dags:/opt/airflow/dags
+    - ${CODE_ROOT}/airflow/logs:/opt/airflow/logs
+    - ${CODE_ROOT}/airflow/config:/opt/airflow/config
+    - ${CODE_ROOT}/airflow/plugins:/opt/airflow/plugins
+    - ${CODE_ROOT}/data:/opt/airflow/data
+    - ${CODE_ROOT}/dbt:/opt/airflow/dbt
+  user: "${AIRFLOW_UID:-1000}:0"
+  depends_on:
+    postgres:
+      condition: service_healthy
+  mem_limit: 768m
+  cpus: 1.0
+  restart: unless-stopped
+  profiles: ["airflow"]
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: edp-${EDP_ENV}-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      EDP_PG_USER: ${EDP_PG_USER}
+      EDP_PG_PASSWORD: ${EDP_PG_PASSWORD}
+    ports:
+      - "${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ${COMPOSE_ROOT}/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      retries: 10
+      start_period: 20s
+    mem_limit: 512m
+    cpus: 1.0
+
+  airflow-apiserver:
+    <<: *airflow-common
+    container_name: edp-${EDP_ENV}-airflow-apiserver
+    command: api-server
+    ports:
+      - "${AIRFLOW_HOST_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: edp-${EDP_ENV}-airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    container_name: edp-${EDP_ENV}-airflow-dag-processor
+    command: dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-triggerer:
+    <<: *airflow-common
+    container_name: edp-${EDP_ENV}-airflow-triggerer
+    command: triggerer
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: edp-${EDP_ENV}-airflow-init
+    restart: "no"
+    mem_limit: 1g
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: "true"
+      _AIRFLOW_WWW_USER_CREATE: "true"
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    command: version
+
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.9.latest
+    profiles: ["tools"]
+    working_dir: /usr/app
+    volumes:
+      - ${CODE_ROOT}/dbt:/usr/app
+      - ${CODE_ROOT}/dbt/profiles.yml:/root/.dbt/profiles.yml:ro
+    environment:
+      EDP_PG_USER: ${EDP_PG_USER}
+      EDP_PG_PASSWORD: ${EDP_PG_PASSWORD}
+      DBT_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["dbt"]
+    command: ["--help"]
+
+volumes:
+  postgres_data:

@@ -17,3 +17,15 @@ sources:
           - name: joining_date
           - name: _loaded_at
           - name: _source_file
+      - name: orders
+        description: CSV landings loaded by the orders mini-pipeline
+        columns:
+          - name: order_id
+          - name: customer_name
+          - name: email
+          - name: product
+          - name: quantity
+          - name: price
+          - name: order_date
+          - name: _loaded_at
+          - name: _source_file

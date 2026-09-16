@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run dbt from a Git checkout against the already-running lab stack.
-# Usage: scripts/ci_dbt.sh <dev|stg|prod> [project_dir]
+# Run dbt against an isolated stack. Usage: ci_dbt.sh <dev|prod> [code_root]
 
-TARGET="${1:?usage: ci_dbt.sh <dev|stg|prod> [project_dir]}"
-PROJECT_DIR="${2:-$(pwd)}"
+TARGET="${1:?usage: ci_dbt.sh <dev|prod> [code_root]}"
+CODE_ROOT="${2:-$(pwd)}"
 LAB_DIR="${LAB_DIR:-/home/satish/Enterprise-Data-Platform}"
-ENV_FILE="${ENV_FILE:-$LAB_DIR/.env}"
+ENV_FILE="${ENV_FILE:-$LAB_DIR/environments/${TARGET}/.env}"
+COMPOSE_FILE="$LAB_DIR/compose/docker-compose.yml"
 
 case "$TARGET" in
-  dev|stg|prod) ;;
-  *) echo "target must be dev, stg, or prod" >&2; exit 1 ;;
+  dev|prod) ;;
+  *) echo "target must be dev or prod" >&2; exit 1 ;;
 esac
 
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -19,11 +19,16 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+extra=()
+if [[ "$TARGET" == "dev" ]]; then
+  extra+=(-f "$LAB_DIR/compose/docker-compose.oracle.yml")
+fi
+
 docker compose \
-  -p enterprise-data-platform \
-  --project-directory "$PROJECT_DIR" \
+  -p "edp-${TARGET}" \
   --env-file "$ENV_FILE" \
-  -f "$PROJECT_DIR/docker-compose.yml" \
+  -f "$COMPOSE_FILE" \
+  "${extra[@]}" \
   --profile tools \
   run --rm --no-deps \
   dbt build --target "$TARGET"
