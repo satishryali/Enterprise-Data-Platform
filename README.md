@@ -1,31 +1,31 @@
-# Isolated DEV / PROD on one host. PROD is off until Jenkins deploys a Git commit.
+# Enterprise-Data-Platform
 
-## Isolation
+Single home-lab stack on one server: Postgres, Airflow, Oracle, dbt, Jenkins.
 
-| | DEV | PROD |
-|---|---|---|
-| Compose project | `edp-dev` | `edp-prod` |
-| Docker network | `edp-dev_default` | `edp-prod_default` |
-| Postgres | `edp-dev-postgres` :5432 | `edp-prod-postgres` :5433 (stopped by default) |
-| Airflow | :8081 | not started |
-| Oracle | `edp-dev-oracle` :1521 | none |
-| Code | this git working tree | `/mnt/storage/import/edp-prod/release` (Jenkins rsync) |
+## Services
 
-There is no shared database, no `promote_raw` copy, and no shared Docker network. Objects reach PROD only from Git via Jenkins.
+| Service | URL / port |
+|---|---|
+| Airflow | http://192.168.1.195:8081 (user `airflow`, password in `.env`) |
+| Postgres | `192.168.1.195:5432`, database `etl`, user `etl` |
+| Oracle | `192.168.1.195:1521`, service `FREEPDB1` |
+| Jenkins | http://192.168.1.195:8082 |
 
 ## Commands
 
 ```bash
-scripts/lab.sh up          # DEV: Postgres + Airflow + Oracle
+cd /home/satish/Enterprise-Data-Platform
+scripts/lab.sh up
 scripts/lab.sh status
-scripts/lab.sh dbt-dev     # dbt debug + build on DEV etl
+scripts/lab.sh dbt
 scripts/lab.sh down
-
-scripts/lab.sh prod-up     # PROD Postgres (required before dbt-prod)
-scripts/lab.sh dbt-prod    # dbt debug + build on PROD etl
-scripts/lab.sh prod-down   # PROD uses no RAM when down
 ```
 
-Jenkins: **Build Now** = DEV only. Tick **DEPLOY_PROD** to rsync the commit and run dbt on PROD Postgres.
+Oracle only:
 
-Oracle (DEV only): `192.168.1.195:1521` service `FREEPDB1`, user `sys` as SYSDBA. Stop Airflow if Oracle is killed (exit 137) — this host has 12 GB RAM.
+```bash
+docker stop edp-oracle
+docker start edp-oracle
+```
+
+Copy `.env.example` to `.env` on a new machine. Secrets are not in Git.

@@ -1,22 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Load orders.csv into an isolated warehouse. Usage: load_orders.sh <dev|prod> [csv]
-
-ENV_NAME="${1:?usage: load_orders.sh <dev|prod> [csv]}"
-CSV="${2:-$(cd "$(dirname "$0")/.." && pwd)/data/input/orders.csv}"
-
-case "$ENV_NAME" in
-  dev|prod) ;;
-  *) echo "env must be dev or prod" >&2; exit 1 ;;
-esac
+CSV="${1:-$(cd "$(dirname "$0")/.." && pwd)/data/input/orders.csv}"
+CONTAINER="edp-postgres"
 
 if [[ ! -f "$CSV" ]]; then
   echo "CSV not found: $CSV" >&2
   exit 1
 fi
-
-CONTAINER="edp-${ENV_NAME}-postgres"
 
 docker exec -i "$CONTAINER" psql -U etl -d etl <<'SQL'
 CREATE TABLE IF NOT EXISTS raw.orders (
@@ -41,4 +32,4 @@ docker exec -i "$CONTAINER" psql -U etl -d etl -c \
   "UPDATE raw.orders SET _source_file = 'orders.csv' WHERE _source_file IS NULL"
 
 COUNT="$(docker exec "$CONTAINER" psql -U etl -d etl -tAc 'SELECT count(*) FROM raw.orders')"
-echo "Loaded ${COUNT} rows into ${CONTAINER} etl.raw.orders"
+echo "Loaded ${COUNT} rows into etl.raw.orders"
