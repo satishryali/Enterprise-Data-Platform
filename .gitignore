@@ -98,3 +98,7 @@ config/*.env
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
+
+# Environment variants containing credentials
+.env.*
+!.env.example

@@ -28,4 +28,4 @@ docker stop edp-oracle
 docker start edp-oracle
 ```
 
-Copy `.env.example` to `.env` on a new machine. Secrets are not in Git.
+Copy `.env.example` to `.env` on a new machine and fill every password and key before `scripts/lab.sh up`. Generate a Fernet key and a strong JWT secret locally. URL-encode database passwords used in connection URLs (or use long random URL-safe passwords). `.env` and its local variants are ignored by Git; `.env.example` contains no credentials.
