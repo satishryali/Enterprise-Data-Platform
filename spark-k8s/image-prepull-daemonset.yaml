@@ -1,0 +1,36 @@
+# Optional: pull apache/spark:4.2.0 onto worker nodes before the demo job.
+# Apply once: kubectl apply -f spark-k8s/image-prepull-daemonset.yaml
+# Remove after: kubectl delete -f spark-k8s/image-prepull-daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spark-420-prepull
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: spark-420-prepull
+  template:
+    metadata:
+      labels:
+        app: spark-420-prepull
+    spec:
+      nodeSelector:
+        spark-worker: "true"
+      tolerations:
+        - operator: Exists
+      initContainers:
+        - name: pull-spark
+          image: docker.io/apache/spark:4.2.0
+          imagePullPolicy: Always
+          command: ["sh", "-c", "echo pulled && sleep 2"]
+      containers:
+        - name: pause
+          image: rancher/mirrored-pause:3.6
+          resources:
+            requests:
+              cpu: 1m
+              memory: 1Mi
+            limits:
+              cpu: 10m
+              memory: 16Mi

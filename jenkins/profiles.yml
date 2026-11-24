@@ -1,0 +1,16 @@
+edp:
+  target: ci
+  outputs:
+    ci: &postgres
+      type: postgres
+      host: "{{ env_var('DBT_HOST') }}"
+      port: "{{ env_var('DBT_PORT', '5432') | as_number }}"
+      user: "{{ env_var('DBT_USER') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME') }}"
+      schema: public
+      threads: 2
+      connect_timeout: 10
+      sslmode: "{{ env_var('DBT_SSLMODE', 'prefer') }}"
+    dev: *postgres
+    prod: *postgres

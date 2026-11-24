@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s ' "$@" >> "$DOCKER_CALL_LOG"
+printf '\n' >> "$DOCKER_CALL_LOG"
+if [[ -n "${FAKE_DOCKER_FAIL_ON:-}" && " $* " == *" $FAKE_DOCKER_FAIL_ON "* ]]; then
+    exit 17
+fi

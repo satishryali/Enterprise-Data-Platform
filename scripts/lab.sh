@@ -12,7 +12,8 @@ Usage: scripts/lab.sh <command>
   up       Start lab (Postgres + Airflow + Oracle)
   down     Stop lab (keeps data)
   status   Containers and RAM
-  dbt      dbt debug + build
+  dbt      dbt debug + build (shortcut)
+  pull-dbt Pull dbt Docker image only
 EOF
 }
 
@@ -29,5 +30,8 @@ case "$cmd" in
     docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}' | head -20
     ;;
   dbt) "$ROOT/scripts/ci_dbt.sh" "$ROOT" ;;
+  pull-dbt)
+    compose --profile tools pull dbt
+    ;;
   *) usage; exit 1 ;;
 esac

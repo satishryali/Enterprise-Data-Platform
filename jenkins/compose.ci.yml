@@ -1,0 +1,40 @@
+# No published ports or persistent volumes: CI cannot reach the lab warehouse.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: edp_ci
+      POSTGRES_USER: ci
+      POSTGRES_PASSWORD: ci_fixture_only
+    volumes:
+      - ./jenkins/fixtures.sql:/docker-entrypoint-initdb.d/fixtures.sql:ro
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ci -d edp_ci"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  dbt:
+    image: ${DBT_IMAGE:-ghcr.io/dbt-labs/dbt-postgres:1.9.latest}
+    user: "${CI_UID:-1000}:${CI_GID:-1000}"
+    working_dir: /usr/app
+    volumes:
+      - ./dbt:/usr/app:ro
+      - ./jenkins/profiles.yml:/profiles/profiles.yml:ro
+      - ./artifacts/dbt/ci:/artifacts
+    environment:
+      HOME: /tmp
+      DBT_HOST: postgres
+      DBT_PORT: "5432"
+      DBT_DBNAME: edp_ci
+      DBT_USER: ci
+      DBT_PASSWORD: ci_fixture_only
+      DBT_TARGET_PATH: /artifacts/target
+      DBT_LOG_PATH: /artifacts/logs
+      DBT_SEND_ANONYMOUS_USAGE_STATS: "false"
+    entrypoint: ["dbt"]
+
+networks:
+  default:
+    internal: true

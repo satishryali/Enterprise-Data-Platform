@@ -1,0 +1,15 @@
+# Merged into Spark executor pods by spark.kubernetes.executor.podTemplateFile
+# Forces each executor onto a different node (one per worker host).
+apiVersion: v1
+kind: Pod
+spec:
+  affinity:
+    podAntiAffinity:
+      # Spread across workers when both are Ready; still schedules if only one worker is up.
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                spark-role: executor
+            topologyKey: kubernetes.io/hostname

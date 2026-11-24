@@ -1,0 +1,14 @@
+# Driver uses the host network so executors on WSL workers can reach it
+# at 192.168.1.195. Pod-to-pod VXLAN does not work through WSL NAT.
+apiVersion: v1
+kind: Pod
+spec:
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule

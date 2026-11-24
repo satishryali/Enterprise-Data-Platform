@@ -82,6 +82,8 @@ vault/
 
 # Jenkins
 jenkins/workspace/
+artifacts/
+.venv-ci/
 
 # Config with secrets
 config/*.ini
@@ -99,6 +101,28 @@ config/*.env
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
 
-# Environment variants containing credentials
+# Spark on K8s (credentials from spark-k8s-setup-auth.sh)
+spark-k8s/submission-client.crt
+spark-k8s/submission-client.key
+spark-k8s/spark-submission-token
+spark-k8s/kubeconfig.admin.yaml
+spark-k8s/kubeconfig.spark-submit.yaml
+
+# Local secrets and generated credentials
+.env
 .env.*
 !.env.example
+!*.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+credentials.json
+service-account*.json
+kubeconfig*.yaml
+kubeconfig*.yml
+*.tfstate
+*.tfstate.*
+spark-k8s/*token*
